@@ -7,12 +7,12 @@ const PORT = process.env.PORT || 3000;
 
 // Enhanced CORS configuration
 const allowedOrigins = [
-  'http://localhost:3000', // Local development
-  'https://lively-dune-0e6a62f03.6.azurestaticapps.net' // Your production frontend
+  'https://lively-dune-0e6a62f03.6.azurestaticapps.net',
+  'http://localhost:3000'
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
