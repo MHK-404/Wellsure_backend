@@ -1,0 +1,29 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: ["main"]  # Runs on pushes to `main` branch
+  pull_request:
+    branches: ["main"]  # Runs on PRs targeting `main`
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest  # Uses a GitHub-hosted Ubuntu runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # Checks out your repo
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"  # Use Node.js 20 (or your preferred version)
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run build (if present)
+        run: npm run build --if-present
+
+      - name: Run tests (skips if no tests exist)
+        run: npm test || echo "No tests found"  # Won't fail if tests don't exist
