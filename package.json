@@ -1,18 +1,26 @@
 
+
 {
   "name": "wellsure_backend",
   "version": "1.0.0",
   "main": "index.js",
- "scripts": {
-  "start": "node index.js",
+  "scripts": {
   "test": "echo \"No tests\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mhk-404/Wellsure_backend.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mhk-404/Wellsure_backend/issues"
+  },
+  "homepage": "https://github.com/mhk-404/Wellsure_backend#readme",
   "description": "",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^5.1.0"
   }
 }
