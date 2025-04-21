@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-   "test": "echo \"Skipping tests.\""
+  "test": "echo \"No tests specified\" && exit 0"
   },
   "repository": {
     "type": "git",
