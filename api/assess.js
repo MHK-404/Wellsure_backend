@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Input validation middleware
 const validateAssessmentInput = (req, res, next) => {
-  const requiredFields = ['age', 'smoke', 'alcohol', 'stress', 'mentalWellbeing'];
+  const requiredFields = ['age', 'gender', 'smoke', 'exercise'];
   const missingFields = requiredFields.filter(field => !req.body[field]);
 
   if (missingFields.length > 0) {
@@ -13,10 +13,10 @@ const validateAssessmentInput = (req, res, next) => {
     });
   }
 
-  if (isNaN(req.body.age) || req.body.age < 1 || req.body.age > 120) {
+  if (isNaN(req.body.age) || req.body.age < 18 || req.body.age > 120) {
     return res.status(400).json({
       error: 'Invalid age value',
-      message: 'Age must be a number between 1 and 120'
+      message: 'Age must be a number between 18 and 120'
     });
   }
 
@@ -34,15 +34,19 @@ router.post('/', validateAssessmentInput, (req, res) => {
     else if (age < 50) score += 2;
     else score += 3;
 
+    // Gender (male typically has higher risk)
+    if (data.gender === 'male') score += 1;
+
     // Lifestyle factors
     if (data.smoke === 'Yes') score += 3;
-    if (data.alcohol === 'Regularly') score += 2;
-    if (data.alcohol === 'Occasionally') score += 1;
+    
+    // Exercise scoring
+    if (data.exercise === 'Never') score += 3;
+    else if (data.exercise === '1-2 times') score += 1;
 
     // Health conditions (safe handling)
     if (Array.isArray(data.conditions)) {
-      const validConditions = data.conditions.filter(c => c !== "none");
-      score += validConditions.length * 2;
+      score += data.conditions.length * 2;
     }
 
     // Mental health factors
@@ -81,44 +85,47 @@ function calculateRisk(score) {
     return {
       riskCategory: 'Very Low Risk',
       recommendations: [
-        'Maintain your current lifestyle!',
-        'Continue regular checkups.'
+        'Maintain your current healthy lifestyle!',
+        'Continue with regular health checkups.'
       ]
     };
   } else if (score <= 10) {
     return {
       riskCategory: 'Low Risk',
       recommendations: [
-        'Consider adding light physical activity.',
-        'Maintain a balanced diet.'
+        'Consider adding more physical activity to your routine.',
+        'Maintain a balanced diet with plenty of fruits and vegetables.',
+        'Practice stress management techniques.'
       ]
     };
   } else if (score <= 15) {
     return {
       riskCategory: 'Moderate Risk',
       recommendations: [
-        'Engage in more stress-relieving activities.',
-        'Track your sleep and screen time.',
-        'Consult your doctor annually.'
+        'Increase your weekly exercise frequency.',
+        'Limit screen time and take regular breaks.',
+        'Consider consulting a health professional for a checkup.',
+        'Practice mindfulness or meditation.'
       ]
     };
   } else if (score <= 20) {
     return {
       riskCategory: 'High Risk',
       recommendations: [
-        'Stop smoking and limit alcohol intake.',
-        'Schedule medical and mental health checkups.',
-        'Increase physical activity.'
+        'Quit smoking if applicable and limit unhealthy habits.',
+        'Schedule a comprehensive health checkup soon.',
+        'Establish a regular exercise routine (3-5 times weekly).',
+        'Consider professional mental health support if needed.'
       ]
     };
   } else {
     return {
       riskCategory: 'Very High Risk',
       recommendations: [
-        'Consult a health professional immediately.',
-        'Seek mental health support.',
-        'Change daily habits for healthier alternatives.',
-        'Follow up regularly with your doctor.'
+        'Consult a healthcare professional immediately for evaluation.',
+        'Implement significant lifestyle changes with professional guidance.',
+        'Prioritize stress reduction and mental health support.',
+        'Establish regular medical follow-ups for monitoring.'
       ]
     };
   }
