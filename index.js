@@ -1,141 +1,133 @@
-const express = require('express');
-const cors = require('cors');
+module.exports = async function (context, req) {
+    context.log('JavaScript HTTP trigger function processed a request.');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+    if (req.method === 'POST') {
+        try {
+            const userData = req.body;
+            
+            // Validate input
+            if (!userData || !userData.age || !userData.gender || !userData.weight || !userData.height) {
+                context.res = {
+                    status: 400,
+                    body: "Please provide all required information: age, gender, weight, and height."
+                };
+                return;
+            }
 
-// CORS Configuration
-const allowedOrigins = [
-  'https://lively-dune-0e6a62f03.6.azurestaticapps.net',
-  'http://localhost:3000'
-];
+            // Calculate BMI
+            const heightInMeters = userData.height / 100;
+            const bmi = userData.weight / (heightInMeters * heightInMeters);
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
+            // Risk calculation algorithm
+            let riskScore = 0;
+            
+            // Age factor
+            if (userData.age < 30) riskScore += 1;
+            else if (userData.age < 50) riskScore += 2;
+            else riskScore += 3;
+
+            // BMI factor
+            if (bmi < 18.5) riskScore += 2; // Underweight
+            else if (bmi < 25) riskScore += 1; // Normal
+            else if (bmi < 30) riskScore += 2; // Overweight
+            else riskScore += 3; // Obese
+
+            // Chronic diseases factor
+            if (userData.chronicDiseases && userData.chronicDiseases.length > 0) {
+                riskScore += userData.chronicDiseases.length * 2;
+            }
+
+            // Mental health factors
+            if (userData.stressLevel && userData.stressLevel > 5) {
+                riskScore += Math.min(3, userData.stressLevel - 5);
+            }
+            if (userData.mentalHealthIssues && userData.mentalHealthIssues.length > 0) {
+                riskScore += userData.mentalHealthIssues.length * 1.5;
+            }
+
+            // Environment factors
+            if (userData.environmentFactors) {
+                if (userData.environmentFactors.includes('pollution')) riskScore += 2;
+                if (userData.environmentFactors.includes('unsafe')) riskScore += 2;
+                if (userData.environmentFactors.includes('sedentary')) riskScore += 1;
+            }
+
+            // Determine risk category
+            let riskCategory, recommendations = [];
+            
+            if (riskScore <= 5) {
+                riskCategory = "Very Low";
+                recommendations = [
+                    "Maintain your healthy lifestyle!",
+                    "Continue regular health check-ups.",
+                    "Keep up with physical activity and balanced diet."
+                ];
+            } else if (riskScore <= 10) {
+                riskCategory = "Low";
+                recommendations = [
+                    "Monitor your health regularly.",
+                    "Consider small lifestyle improvements.",
+                    "Manage stress through relaxation techniques."
+                ];
+            } else if (riskScore <= 15) {
+                riskCategory = "Moderate";
+                recommendations = [
+                    "Consult with a healthcare provider for a check-up.",
+                    "Consider dietary improvements and regular exercise.",
+                    "Address any chronic conditions with professional help."
+                ];
+            } else if (riskScore <= 20) {
+                riskCategory = "High";
+                recommendations = [
+                    "Seek medical advice as soon as possible.",
+                    "Implement significant lifestyle changes.",
+                    "Consider stress management programs."
+                ];
+            } else {
+                riskCategory = "Very High";
+                recommendations = [
+                    "Immediate medical consultation recommended.",
+                    "Comprehensive lifestyle changes needed.",
+                    "Consider working with health professionals for a care plan."
+                ];
+            }
+
+            // Add BMI-specific recommendation
+            if (bmi < 18.5) {
+                recommendations.push("Your BMI suggests underweight - consider nutritional counseling.");
+            } else if (bmi >= 25) {
+                recommendations.push(`Your BMI (${bmi.toFixed(1)}) suggests ${bmi >= 30 ? 'obesity' : 'overweight'} - consider weight management strategies.`);
+            }
+
+            context.res = {
+                status: 200,
+                body: {
+                    riskCategory,
+                    riskScore,
+                    bmi: bmi.toFixed(1),
+                    recommendations
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                }
+            };
+        } catch (error) {
+            context.res = {
+                status: 500,
+                body: "An error occurred while processing your request.",
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+        }
     } else {
-      callback(new Error('Not allowed by CORS'));
+        context.res = {
+            status: 200,
+            body: "Please send a POST request to this endpoint with your health data.",
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
     }
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type']
-}));
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Health Check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'Healthy',
-    version: '1.0.0',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Assessment Endpoint
-app.post('/api/assess', (req, res) => {
-  console.log('Received assessment request:', req.body);
-  
-  try {
-    // Validate required fields
-    if (!req.body.age || !req.body.gender) {
-      return res.status(400).json({ 
-        error: 'Missing required fields',
-        required: ['age', 'gender']
-      });
-    }
-
-    // Calculate score
-    let score = 0;
-    
-    // Age scoring
-    const age = parseInt(req.body.age);
-    if (age < 30) score += 1;
-    else if (age < 50) score += 2;
-    else score += 3;
-
-    // Gender scoring
-    if (req.body.gender === 'male') score += 1;
-
-    // Lifestyle factors
-    if (req.body.smoke === 'yes') score += 3;
-    if (req.body.exercise === 'never') score += 3;
-    else if (req.body.exercise === '1-2') score += 1;
-
-    // Mental health factors
-    const stress = parseInt(req.body.stress) || 5;
-    const wellbeing = parseInt(req.body.mentalWellbeing) || 5;
-    
-    if (stress > 7) score += 3;
-    else if (stress > 5) score += 2;
-    
-    if (wellbeing < 4) score += 3;
-    else if (wellbeing < 6) score += 1;
-
-    // Determine risk category
-    let riskCategory, recommendations;
-    
-    if (score <= 5) {
-      riskCategory = 'Very Low Risk';
-      recommendations = [
-        'Maintain your current healthy lifestyle',
-        'Continue regular health checkups'
-      ];
-    } else if (score <= 10) {
-      riskCategory = 'Low Risk';
-      recommendations = [
-        'Increase physical activity',
-        'Practice stress management'
-      ];
-    } else if (score <= 15) {
-      riskCategory = 'Moderate Risk';
-      recommendations = [
-        'Consult with a healthcare provider',
-        'Reduce screen time'
-      ];
-    } else {
-      riskCategory = 'High Risk';
-      recommendations = [
-        'Schedule a health evaluation',
-        'Seek professional support'
-      ];
-    }
-
-    // Send response
-    res.json({
-      success: true,
-      riskCategory,
-      recommendations,
-      score: Math.round(score * 10) / 10
-    });
-
-  } catch (error) {
-    console.error('Assessment error:', error);
-    res.status(500).json({ 
-      error: 'Assessment failed',
-      message: error.message 
-    });
-  }
-});
-
-// Error handling
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
-    message: err.message 
-  });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
-});
+};
