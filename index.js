@@ -35,6 +35,30 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.post('/api/assess', (req, res) => {
+  console.log('Received request body:', req.body); // Debug log
+  
+  try {
+    // [Your existing scoring logic...]
+    
+    const result = {
+      riskCategory,
+      recommendations,
+      score
+    };
+    
+    console.log('Sending response:', result); // Debug log
+    res.json(result);
+    
+  } catch (error) {
+    console.error('Error processing assessment:', error);
+    res.status(500).json({ 
+      error: 'Processing failed',
+      details: error.message 
+    });
+  }
+});
+
 // Assessment endpoint
 app.post('/api/assess', (req, res) => {
   console.log('Received assessment request:', req.body);
